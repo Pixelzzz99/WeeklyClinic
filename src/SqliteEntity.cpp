@@ -56,6 +56,10 @@ bool SqliteEntity::insert(std::vector<std::pair<position, value>> values)
 
         for (auto column : this->columns)
         {
+            if (column.isPrimaryKey)
+            {
+                continue;
+            }
             insertQuery += column.name;
             insertQuery += ", ";
         }
@@ -65,6 +69,10 @@ bool SqliteEntity::insert(std::vector<std::pair<position, value>> values)
 
         for (auto column : this->columns)
         {
+            if (column.isPrimaryKey)
+            {
+                continue;
+            }
             insertQuery += "?";
             insertQuery += ", ";
         }
@@ -84,19 +92,20 @@ bool SqliteEntity::insert(std::vector<std::pair<position, value>> values)
         {
             if (columns[value.first].type == columnTypes::TEXT || columns[value.first].type == columnTypes::CHAR)
             {
-                sqlite3_bind_text(stmt, value.first + 1, value.second.c_str(), value.second.size(), SQLITE_STATIC);
+                std::string *text = new std::string(value.second);
+                sqlite3_bind_text(stmt, value.first, text->c_str(), text->size(), SQLITE_STATIC);
             }
             else if (columns[value.first].type == columnTypes::INT)
             {
-                sqlite3_bind_int(stmt, value.first + 1, std::stoi(value.second));
+                sqlite3_bind_int(stmt, value.first, std::stoi(value.second));
             }
             else if (columns[value.first].type == columnTypes::FLOAT)
             {
-                sqlite3_bind_double(stmt, value.first + 1, std::stod(value.second));
+                sqlite3_bind_double(stmt, value.first, std::stod(value.second));
             }
             else if (columns[value.first].type == columnTypes::BLOB)
             {
-                sqlite3_bind_blob(stmt, value.first + 1, value.second.c_str(), value.second.size(), SQLITE_STATIC);
+                sqlite3_bind_blob(stmt, value.first, value.second.c_str(), value.second.size(), SQLITE_STATIC);
             }
             else
             {
@@ -122,10 +131,72 @@ bool SqliteEntity::insert(std::vector<std::pair<position, value>> values)
     }
 }
 
-bool SqliteEntity::select(std::string)
+IEntity::rows SqliteEntity::select(std::vector<condition> conditions)
 {
+    try
+    {
+        std::string selectQuery = "SELECT * FROM " + this->tableName;
+        sqlite3_stmt *stmt;
 
-    return true;
+        if (conditions.empty())
+        {
+            int rc = sqlite3_prepare_v2(db, selectQuery.c_str(), -1, &stmt, 0);
+
+            if (rc != SQLITE_OK)
+            {
+                std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+                throw std::runtime_error("Internal server error");
+            }
+
+            rc = sqlite3_step(stmt);
+
+            if (rc != SQLITE_DONE)
+            {
+                std::cerr << "Failed to select: " << sqlite3_errmsg(db) << std::endl;
+                throw std::runtime_error("Internal server error");
+            }
+
+            rows allRows;
+
+            while (sqlite3_step(stmt) == SQLITE_ROW)
+            {
+                std::vector<std::string> oneRow = {};
+
+                for (auto column : this->columns)
+                {
+                    if (column.isPrimaryKey)
+                    {
+                        continue;
+                    }
+                    if (column.type == columnTypes::TEXT || column.type == columnTypes::CHAR)
+                    {
+                        oneRow[column.name] = std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, column.position)));
+                    }
+                    else if (column.type == columnTypes::INT)
+                    {
+                        oneRow[column.name] = std::to_string(sqlite3_column_int(stmt, column.position));
+                    }
+                    else if (column.type == columnTypes::FLOAT)
+                    {
+                        oneRow[column.name] = std::to_string(sqlite3_column_double(stmt, column.position));
+                    }
+                    else if (column.type == columnTypes::BLOB)
+                    {
+                        oneRow[column.name] = std::string(reinterpret_cast<const char *>(sqlite3_column_blob(stmt, column.position)), sqlite3_column_bytes(stmt, column.position));
+                    }
+                }
+            }
+
+            sqlite3_finalize(stmt);
+
+            return true;
+        }
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        return false;
+    }
 }
 
 bool SqliteEntity::update(std::string)

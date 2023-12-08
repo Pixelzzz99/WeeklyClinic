@@ -112,16 +112,23 @@ int main()
 
   // sqlite3_close(db);
   SqliteORM *orm = new SqliteORM();
-  orm->connect("clinic.db");
-  orm->createEntity("patients", {
-                                    {"id", columnTypes::INT, true},
-                                    {"name", columnTypes::TEXT},
-                                    {"age", columnTypes::INT},
-                                    {"gender", columnTypes::TEXT},
-                                    {"address", columnTypes::TEXT},
-                                    {"phone", columnTypes::TEXT},
-                                    {"medical_history", columnTypes::TEXT},
-                                });
+  orm->connect("test.db");
+  auto patients = orm->createEntity("patients", {{"id", columnTypes::INT, true},
+                                                 {"name", columnTypes::TEXT},
+                                                 {"age", columnTypes::INT},
+                                                 {"gender", columnTypes::TEXT},
+                                                 {"address", columnTypes::TEXT},
+                                                 {"phone", columnTypes::TEXT},
+                                                 {"medical_history", columnTypes::TEXT},
+                                                 {"count_of_visits", columnTypes::INT}});
+
+  patients->insert({{1, "John"},
+                    {2, std::to_string(25)},
+                    {3, "Male"},
+                    {4, "123 Main St"},
+                    {5, "555-555-5555"},
+                    {6, "So Bad"},
+                    {7, std::to_string(0)}});
 
   return 0;
 }

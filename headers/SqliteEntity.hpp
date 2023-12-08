@@ -14,7 +14,7 @@ public:
 
     bool insert(std::vector<std::pair<position, value>> values) override;
 
-    bool select(std::string) override;
+    rows select(std::vector<condition> conditions) override;
 
     bool update(std::string) override;
 

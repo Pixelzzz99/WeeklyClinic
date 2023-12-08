@@ -23,6 +23,7 @@ struct column
     std::string name;
     std::string type;
     bool isPrimaryKey;
+    std::string value;
 };
 
 class IEntity
@@ -30,10 +31,13 @@ class IEntity
 protected:
     typedef int position;
     typedef std::string value;
+    typedef std::string condition;
+    typedef std::vector<column> row;
+    typedef std::vector<row> rows;
 
 public:
     virtual bool insert(std::vector<std::pair<position, value>>) = 0;
-    virtual bool select(std::string) = 0;
+    virtual rows select(std::vector<condition> conditions) = 0;
     virtual bool update(std::string) = 0;
     virtual bool delete_(std::string) = 0;
     virtual bool drop() = 0;
