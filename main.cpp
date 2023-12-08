@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sqlite3.h>
 #include <string>
+#include <SqliteORM.hpp>
 
 sqlite3 *db;
 
@@ -100,15 +101,27 @@ void registerPatient(const crow::request &req, crow::response &res)
 
 int main()
 {
-  initDB();
-  crow::SimpleApp app; // define your crow application
+  // initDB();
+  // crow::SimpleApp app; // define your crow application
 
-  // define your endpoint at the root directory
-  CROW_ROUTE(app, "/register_patient").methods(crow::HTTPMethod::POST)(registerPatient);
+  // // define your endpoint at the root directory
+  // CROW_ROUTE(app, "/register_patient").methods(crow::HTTPMethod::POST)(registerPatient);
 
-  // set the port, set the app to run on multiple threads, and run the app
-  app.port(18080).multithreaded().run();
+  // // set the port, set the app to run on multiple threads, and run the app
+  // app.port(18080).multithreaded().run();
 
-  sqlite3_close(db);
+  // sqlite3_close(db);
+  SqliteORM *orm = new SqliteORM();
+  orm->connect("clinic.db");
+  orm->createEntity("patients", {
+                                    {"id", columnTypes::INT, true},
+                                    {"name", columnTypes::TEXT},
+                                    {"age", columnTypes::INT},
+                                    {"gender", columnTypes::TEXT},
+                                    {"address", columnTypes::TEXT},
+                                    {"phone", columnTypes::TEXT},
+                                    {"medical_history", columnTypes::TEXT},
+                                });
+
   return 0;
 }
