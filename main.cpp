@@ -122,17 +122,25 @@ int main()
                                                  {"medical_history", columnTypes::TEXT},
                                                  {"count_of_visits", columnTypes::INT}});
 
-  // for (int i = 10; i < 30; i++)
-  // {
-  //   patients->insert({{1, "Liliana " + std::to_string(i)},
-  //                     {2, std::to_string(i)},
-  //                     {3, "Female"},
-  //                     {4, "123 Main St"},
-  //                     {5, "555-555-5555"},
-  //                     {6, "So Bad"},
-  //                     {7, std::to_string(0)}});
-  // }
-  auto result = patients->select({"age < 20", "gender = 'Male'"});
+  auto doctors = orm->createEntity("doctors", {
+                                                  {"id", columnTypes::INT, true},
+                                                  {"name", columnTypes::TEXT},
+                                                  {"age", columnTypes::INT},
+                                                  {"gender", columnTypes::TEXT},
+                                                  {"speciality", columnTypes::TEXT},
+                                              });
+
+  for (int i = 18; i < 25; i++)
+  {
+    patients->insert({{1, "Bob" + std::to_string(i)},
+                      {2, std::to_string(i)},
+                      {3, "Male"},
+                      {4, "2323 Main St"},
+                      {5, "1234556789"},
+                      {6, "Kidney Failure"},
+                      {7, std::to_string(23)}});
+  }
+  auto result = patients->select({});
 
   for (auto patient : result)
   {
@@ -146,6 +154,7 @@ int main()
   }
 
   auto resultUpdate = patients->update(17, {{"medical_history", "Healthy"}, {"count_of_visits", "1"}, {"address", "234 Main St"}});
+  patients->delete_(24);
   result = patients->select({"age < 20", "gender = 'Male'"});
 
   for (auto patient : result)

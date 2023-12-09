@@ -23,7 +23,6 @@ struct column
     std::string name;
     std::string type;
     bool isPrimaryKey;
-    std::string value;
 };
 
 class IEntity

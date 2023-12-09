@@ -237,14 +237,22 @@ std::vector<std::map<std::string, std::string>> SqliteEntity::select(std::vector
 
 bool SqliteEntity::update(int id, std::vector<std::pair<std::string, value>> values)
 {
+    if (this->tableName.empty())
+    {
+        std::cout << "table is not exist" << std::endl;
+        return false;
+    }
     std::string updateQuery = "UPDATE " + this->tableName + " SET ";
     try
     {
-        for (auto value : values)
+        if (values.empty())
+        {
+            return false;
+        }
+        for (const auto &value : values)
         {
             updateQuery += value.first + " = '" + value.second + "', ";
         }
-
         updateQuery = updateQuery.substr(0, updateQuery.size() - 2);
         updateQuery += " WHERE id = " + std::to_string(id);
 
@@ -254,7 +262,7 @@ bool SqliteEntity::update(int id, std::vector<std::pair<std::string, value>> val
         if (rc != SQLITE_OK)
         {
             std::cerr << "Failed to update: " << sqlite3_errmsg(db) << std::endl;
-            throw std::runtime_error("Internal server error");
+            throw std::runtime_error(sqlite3_errmsg(db));
         }
 
         return true;
@@ -268,12 +276,46 @@ bool SqliteEntity::update(int id, std::vector<std::pair<std::string, value>> val
 
 bool SqliteEntity::delete_(int id)
 {
-    // TODO: IMplement delete method
-    return true;
+    try
+    {
+        std::string deleteQuery = "DELETE FROM " + this->tableName + " WHERE id = " + std::to_string(id);
+        int rc = sqlite3_exec(db, deleteQuery.c_str(), nullptr, nullptr, nullptr);
+        if (rc != SQLITE_OK)
+        {
+            std::cerr << "Failed to delete: " << sqlite3_errmsg(db) << std::endl;
+            throw std::runtime_error(sqlite3_errmsg(db));
+        }
+        return true;
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        return false;
+    }
 }
 
 bool SqliteEntity::drop()
 {
-
-    return true;
+    if (this->tableName == "")
+    {
+        std::cerr << "Table not exist" << std::endl;
+        return false;
+    }
+    try
+    {
+        std::string dropQuery = "DROP TABLE " + this->tableName;
+        int rc = sqlite3_exec(db, dropQuery.c_str(), nullptr, nullptr, nullptr);
+        if (rc != SQLITE_OK)
+        {
+            std::cerr << "Failed to drop: " << sqlite3_errmsg(db) << std::endl;
+            throw std::runtime_error(sqlite3_errmsg(db));
+        }
+        this->tableName = "";
+        return true;
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        return false;
+    }
 }
