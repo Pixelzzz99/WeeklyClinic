@@ -104,7 +104,7 @@ void registerPatient(const crow::request &req, crow::response &res)
 int main()
 {
   // initDB();
-  // crow::SimpleApp app; // define your crow application
+  crow::SimpleApp app; // define your crow application
 
   // // define your endpoint at the root directory
   // CROW_ROUTE(app, "/register_patient").methods(crow::HTTPMethod::POST)(registerPatient);
@@ -115,9 +115,10 @@ int main()
   // sqlite3_close(db);
 
   SqliteORM *orm = new SqliteORM();
-  PatientCont
-      orm->connect("test.db");
+  orm->connect("test.db");
 
+  PatientController patientController(app);
+  DoctorController doctorController(app);
   // auto patientsTable = new PatientRepository(orm);
 
   auto patients = orm->createEntity("patients", {{"id", columnTypes::INT, true},
