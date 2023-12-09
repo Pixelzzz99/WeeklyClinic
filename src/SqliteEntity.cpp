@@ -1,7 +1,8 @@
 #include <iostream>
+#include <string>
 #include "SqliteORM.hpp"
 
-SqliteEntity::SqliteEntity(sqlite3 *db, std::string tableName, std::vector<column> columns)
+SqliteEntity::SqliteEntity(sqlite3 *db, std::string tableName, std::vector<column> columns) : db(db), tableName(tableName), columns(columns)
 {
     try
     {
@@ -9,13 +10,10 @@ SqliteEntity::SqliteEntity(sqlite3 *db, std::string tableName, std::vector<colum
         {
             throw std::runtime_error("Columns cannot be empty");
         }
-        this->db = db;
-        this->tableName = tableName;
         std::string createTable = "CREATE TABLE IF NOT EXISTS " + tableName + " (";
 
-        for (auto column : columns)
+        for (const auto &column : columns)
         {
-            this->columns.push_back(column);
             createTable += column.name + " " + column.type;
             if (column.isPrimaryKey)
             {
@@ -38,7 +36,13 @@ SqliteEntity::SqliteEntity(sqlite3 *db, std::string tableName, std::vector<colum
 SqliteEntity::~SqliteEntity()
 {
     std::string dropTable = "DROP TABLE " + this->tableName;
-    sqlite3_exec(db, dropTable.c_str(), 0, 0, 0);
+    char *errorMessage = nullptr;
+    int result = sqlite3_exec(db, dropTable.c_str(), nullptr, nullptr, &errorMessage);
+    if (result != SQLITE_OK)
+    {
+        std::cerr << "Error dropping table: " << errorMessage << std::endl;
+        sqlite3_free(errorMessage);
+    }
 }
 
 bool SqliteEntity::insert(std::vector<std::pair<position, value>> values)
@@ -49,38 +53,28 @@ bool SqliteEntity::insert(std::vector<std::pair<position, value>> values)
         {
             throw std::runtime_error("Values cannot be empty");
         }
+        std::string insertQuery = "INSERT INTO " + this->tableName + " (";
+        std::string bindQuery = ") VALUES (";
+        std::string valuesQuery = ")";
+
+        for (auto column : this->columns)
+        {
+            if (column.isPrimaryKey)
+            {
+                continue;
+            }
+            insertQuery += column.name + ", ";
+            bindQuery += "?, ";
+        }
+
+        insertQuery = insertQuery.substr(0, insertQuery.size() - 2);
+        bindQuery = bindQuery.substr(0, bindQuery.size() - 2);
+
+        std::string query = insertQuery + bindQuery + valuesQuery;
 
         sqlite3_stmt *stmt;
 
-        std::string insertQuery = "INSERT INTO " + this->tableName + " (";
-
-        for (auto column : this->columns)
-        {
-            if (column.isPrimaryKey)
-            {
-                continue;
-            }
-            insertQuery += column.name;
-            insertQuery += ", ";
-        }
-
-        insertQuery = insertQuery.substr(0, insertQuery.size() - 2);
-        insertQuery += ") VALUES (";
-
-        for (auto column : this->columns)
-        {
-            if (column.isPrimaryKey)
-            {
-                continue;
-            }
-            insertQuery += "?";
-            insertQuery += ", ";
-        }
-
-        insertQuery = insertQuery.substr(0, insertQuery.size() - 2);
-        insertQuery += ")";
-
-        int rc = sqlite3_prepare_v2(db, insertQuery.c_str(), -1, &stmt, 0);
+        int rc = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, 0);
 
         if (rc != SQLITE_OK)
         {
@@ -131,7 +125,7 @@ bool SqliteEntity::insert(std::vector<std::pair<position, value>> values)
     }
 }
 
-IEntity::rows SqliteEntity::select(std::vector<condition> conditions)
+std::vector<std::map<std::string, std::string>> SqliteEntity::select(std::vector<condition> conditions)
 {
     try
     {
@@ -140,7 +134,7 @@ IEntity::rows SqliteEntity::select(std::vector<condition> conditions)
 
         if (conditions.empty())
         {
-            int rc = sqlite3_prepare_v2(db, selectQuery.c_str(), -1, &stmt, 0);
+            int rc = sqlite3_prepare_v2(db, selectQuery.c_str(), -1, &stmt, nullptr);
 
             if (rc != SQLITE_OK)
             {
@@ -149,48 +143,121 @@ IEntity::rows SqliteEntity::select(std::vector<condition> conditions)
             }
 
             rc = sqlite3_step(stmt);
-
-            if (rc != SQLITE_DONE)
+            if (rc != SQLITE_ROW)
             {
                 std::cerr << "Failed to select: " << sqlite3_errmsg(db) << std::endl;
                 throw std::runtime_error("Internal server error");
             }
 
-            rows allRows;
-
-            while (sqlite3_step(stmt) == SQLITE_ROW)
+            std::vector<std::string> columnNames;
+            std::vector<std::string> columnTypes;
+            int columnCount = sqlite3_column_count(stmt);
+            for (int i = 0; i < columnCount; i++)
             {
-                std::vector<std::string> oneRow = {};
+                const char *columnName = sqlite3_column_name(stmt, i);
+                const char *columnType = sqlite3_column_decltype(stmt, i);
+                columnNames.push_back(columnName);
+                columnTypes.push_back(columnType ? columnType : "");
+            }
 
-                for (auto column : this->columns)
+            std::vector<std::map<std::string, std::string>> values;
+            while (rc == SQLITE_ROW)
+            {
+                std::map<std::string, std::string> row;
+                for (int i = 0; i < columnCount; i++)
                 {
-                    if (column.isPrimaryKey)
-                    {
-                        continue;
-                    }
-                    if (column.type == columnTypes::TEXT || column.type == columnTypes::CHAR)
-                    {
-                        oneRow[column.name] = std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, column.position)));
-                    }
-                    else if (column.type == columnTypes::INT)
-                    {
-                        oneRow[column.name] = std::to_string(sqlite3_column_int(stmt, column.position));
-                    }
-                    else if (column.type == columnTypes::FLOAT)
-                    {
-                        oneRow[column.name] = std::to_string(sqlite3_column_double(stmt, column.position));
-                    }
-                    else if (column.type == columnTypes::BLOB)
-                    {
-                        oneRow[column.name] = std::string(reinterpret_cast<const char *>(sqlite3_column_blob(stmt, column.position)), sqlite3_column_bytes(stmt, column.position));
-                    }
+                    const char *value = reinterpret_cast<const char *>(sqlite3_column_text(stmt, i));
+                    row[columnNames[i]] = value ? value : "";
                 }
+                values.push_back(row);
+                rc = sqlite3_step(stmt);
             }
 
             sqlite3_finalize(stmt);
 
-            return true;
+            return values;
         }
+
+        selectQuery += " WHERE ";
+        for (auto condition : conditions)
+        {
+            selectQuery += condition + " AND ";
+        }
+        selectQuery = selectQuery.substr(0, selectQuery.size() - 5);
+
+        int rc = sqlite3_prepare_v2(db, selectQuery.c_str(), -1, &stmt, nullptr);
+
+        if (rc != SQLITE_OK)
+        {
+            std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+            throw std::runtime_error("Internal server error");
+        }
+        std::cout << "selectQuery: " << selectQuery << std::endl;
+        rc = sqlite3_step(stmt);
+
+        if (rc != SQLITE_ROW)
+        {
+            return std::vector<std::map<std::string, std::string>>();
+        }
+
+        std::vector<std::string> columnNames;
+        std::vector<std::string> columnTypes;
+        int columnCount = sqlite3_column_count(stmt);
+        for (int i = 0; i < columnCount; i++)
+        {
+            const char *columnName = sqlite3_column_name(stmt, i);
+            const char *columnType = sqlite3_column_decltype(stmt, i);
+            columnNames.push_back(columnName);
+            columnTypes.push_back(columnType ? columnType : "");
+        }
+
+        std::vector<std::map<std::string, std::string>> values;
+        while (rc == SQLITE_ROW)
+        {
+            std::map<std::string, std::string> row;
+            for (int i = 0; i < columnCount; i++)
+            {
+                const char *value = reinterpret_cast<const char *>(sqlite3_column_text(stmt, i));
+                row[columnNames[i]] = value ? value : "";
+            }
+            values.push_back(row);
+            rc = sqlite3_step(stmt);
+        }
+
+        sqlite3_finalize(stmt);
+
+        return values;
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        return {};
+    }
+}
+
+bool SqliteEntity::update(int id, std::vector<std::pair<std::string, value>> values)
+{
+    std::string updateQuery = "UPDATE " + this->tableName + " SET ";
+    try
+    {
+        for (auto value : values)
+        {
+            updateQuery += value.first + " = '" + value.second + "', ";
+        }
+
+        updateQuery = updateQuery.substr(0, updateQuery.size() - 2);
+        updateQuery += " WHERE id = " + std::to_string(id);
+
+        std::cout << updateQuery << std::endl;
+
+        int rc = sqlite3_exec(db, updateQuery.c_str(), nullptr, nullptr, nullptr);
+        if (rc != SQLITE_OK)
+        {
+            std::cerr << "Failed to update: " << sqlite3_errmsg(db) << std::endl;
+            throw std::runtime_error("Internal server error");
+        }
+
+        return true;
     }
     catch (const std::exception &e)
     {
@@ -199,15 +266,9 @@ IEntity::rows SqliteEntity::select(std::vector<condition> conditions)
     }
 }
 
-bool SqliteEntity::update(std::string)
+bool SqliteEntity::delete_(int id)
 {
-
-    return true;
-}
-
-bool SqliteEntity::delete_(std::string)
-{
-
+    // TODO: IMplement delete method
     return true;
 }
 

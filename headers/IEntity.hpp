@@ -2,7 +2,7 @@
 #include <utility>
 #include <vector>
 #include <string>
-#include <unordered_map>
+#include <map>
 
 namespace columnTypes
 {
@@ -32,13 +32,11 @@ protected:
     typedef int position;
     typedef std::string value;
     typedef std::string condition;
-    typedef std::vector<column> row;
-    typedef std::vector<row> rows;
 
 public:
     virtual bool insert(std::vector<std::pair<position, value>>) = 0;
-    virtual rows select(std::vector<condition> conditions) = 0;
-    virtual bool update(std::string) = 0;
-    virtual bool delete_(std::string) = 0;
+    virtual std::vector<std::map<std::string, std::string>> select(std::vector<condition> conditions) = 0;
+    virtual bool update(int id, std::vector<std::pair<std::string, value>> values) = 0;
+    virtual bool delete_(int id) = 0;
     virtual bool drop() = 0;
 };

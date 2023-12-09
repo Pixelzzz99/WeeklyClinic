@@ -14,11 +14,11 @@ public:
 
     bool insert(std::vector<std::pair<position, value>> values) override;
 
-    rows select(std::vector<condition> conditions) override;
+    std::vector<std::map<std::string, std::string>> select(std::vector<condition> conditions) override;
 
-    bool update(std::string) override;
+    bool update(int id, std::vector<std::pair<std::string, value>> values) override;
 
-    bool delete_(std::string) override;
+    bool delete_(int id) override;
 
     bool drop() override;
 };
