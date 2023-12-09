@@ -3,6 +3,8 @@
 #include <sqlite3.h>
 #include <string>
 #include <SqliteORM.hpp>
+#include "patient.controller.hpp"
+#include "doctor.controller.hpp"
 
 sqlite3 *db;
 
@@ -111,8 +113,13 @@ int main()
   // app.port(18080).multithreaded().run();
 
   // sqlite3_close(db);
+
   SqliteORM *orm = new SqliteORM();
-  orm->connect("test.db");
+  PatientCont
+      orm->connect("test.db");
+
+  // auto patientsTable = new PatientRepository(orm);
+
   auto patients = orm->createEntity("patients", {{"id", columnTypes::INT, true},
                                                  {"name", columnTypes::TEXT},
                                                  {"age", columnTypes::INT},
@@ -132,15 +139,15 @@ int main()
 
   for (int i = 18; i < 25; i++)
   {
-    patients->insert({{1, "Bob" + std::to_string(i)},
+    patients->insert({{1, "Maria" + std::to_string(i)},
                       {2, std::to_string(i)},
-                      {3, "Male"},
+                      {3, "Female"},
                       {4, "2323 Main St"},
                       {5, "1234556789"},
                       {6, "Kidney Failure"},
                       {7, std::to_string(23)}});
   }
-  auto result = patients->select({});
+  auto result = patients->select({"gender = 'Female'", "age > 20"});
 
   for (auto patient : result)
   {

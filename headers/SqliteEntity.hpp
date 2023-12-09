@@ -9,6 +9,7 @@ class SqliteEntity : public IEntity
     std::vector<column> columns;
 
 public:
+    SqliteEntity();
     SqliteEntity(sqlite3 *db, std::string tableName, std::vector<column> columns);
     ~SqliteEntity();
 

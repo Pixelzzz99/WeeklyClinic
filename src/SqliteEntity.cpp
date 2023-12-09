@@ -2,6 +2,8 @@
 #include <string>
 #include "SqliteORM.hpp"
 
+SqliteEntity::SqliteEntity() {}
+
 SqliteEntity::SqliteEntity(sqlite3 *db, std::string tableName, std::vector<column> columns) : db(db), tableName(tableName), columns(columns)
 {
     try
