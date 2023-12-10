@@ -8,5 +8,5 @@ class DoctorService
 
 public:
     DoctorService(std::shared_ptr<DoctorRepository> repository);
-    void registerDoctor();
+    std::string registerDoctor(std::string name, std::string specialization, std::string address, std::string phone);
 };

@@ -20,12 +20,15 @@ std::vector<std::map<std::string, std::string>> DoctorRepository::select(std::ve
 
 bool DoctorRepository::insert(std::vector<std::pair<int, std::string>> values)
 {
+    return this->doctors->insert(values);
 }
 
 bool DoctorRepository::update(int id, std::vector<std::pair<std::string, std::string>> values)
 {
+    return this->doctors->update(id, values);
 }
 
 bool DoctorRepository::delete_(int id)
 {
+    return this->doctors->delete_(id);
 }
