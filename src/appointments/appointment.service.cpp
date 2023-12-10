@@ -18,14 +18,14 @@ std::string AppointmentService::bookingPatient(std::string patient_id, int docto
     if (!isValidTime(time))
     {
         return "Time should be in format: 14:00, 15:00,.... From 07:00 to 19:00";
-        }
+    }
 
     if (!isDateInFuture(date))
     {
         return "Date should be in the future";
     }
 
-    auto apointmentExist = repository->select({"doctor_id=" + std::to_string(doctor_id), "dateAppointment=" + date, "timeAppointment=" + time});
+    auto apointmentExist = repository->select({"doctor_id=" + std::to_string(doctor_id), "dateAppointment='" + date + "'", "timeAppointment='" + time + "'"});
 
     if (apointmentExist.size() > 0)
     {
