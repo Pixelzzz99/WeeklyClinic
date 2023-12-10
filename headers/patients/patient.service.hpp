@@ -1,8 +1,9 @@
 #pragma once
-#include "patient.repository.hpp"
 #include <memory>
+#include "IService.hpp"
+#include "patient.repository.hpp"
 
-class PatientService
+class PatientService : public IService
 {
     std::shared_ptr<PatientRepository> repository;
     std::string uuidGenerator();

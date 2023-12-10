@@ -23,6 +23,9 @@ struct column
     std::string name;
     std::string type;
     bool isPrimaryKey;
+    bool isForeignKey;
+    std::string foreignTable;
+    std::string foreignColumn;
 };
 
 class IEntity

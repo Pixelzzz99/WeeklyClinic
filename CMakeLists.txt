@@ -19,15 +19,18 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Crow/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers/doctors)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers/patients)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers/appointments)
 
 file(GLOB HEADERS_FILES ./headers/*.hpp 
                         ./headers/doctors/*.hpp
-                        ./headeers/patients/*.hpp)
+                        ./headeers/patients/*.hpp
+                        ./headers/appointments/*.hpp)
                         
 
 file(GLOB SOURCES_FILES ./src/*.cpp
                         ./src/doctors/*.cpp
-                        ./src/patients/*.cpp)
+                        ./src/patients/*.cpp
+                        ./src/appointments/*.cpp)
 
 add_executable(cpp_weekly_report main.cpp ${SOURCES_FILES} ${HEADERS_FILES})
 

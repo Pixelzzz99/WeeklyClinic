@@ -13,6 +13,7 @@ SqliteEntity::SqliteEntity(sqlite3 *db, std::string tableName, std::vector<colum
             throw std::runtime_error("Columns cannot be empty");
         }
         std::string createTable = "CREATE TABLE IF NOT EXISTS " + tableName + " (";
+        std::string foreignKeys = "";
 
         for (const auto &column : columns)
         {
@@ -21,10 +22,20 @@ SqliteEntity::SqliteEntity(sqlite3 *db, std::string tableName, std::vector<colum
             {
                 createTable += " PRIMARY KEY";
             }
+            if (column.isForeignKey)
+            {
+                foreignKeys += "FOREIGN KEY (" + column.name + ") REFERENCES " + column.foreignTable + "(" + column.foreignColumn + "), ";
+            }
             createTable += ", ";
         }
 
+        if (!foreignKeys.empty())
+        {
+            createTable += foreignKeys;
+        }
+
         createTable = createTable.substr(0, createTable.size() - 2);
+
         createTable += ")";
         sqlite3_exec(db, createTable.c_str(), 0, 0, 0);
     }
@@ -37,14 +48,6 @@ SqliteEntity::SqliteEntity(sqlite3 *db, std::string tableName, std::vector<colum
 
 SqliteEntity::~SqliteEntity()
 {
-    std::string dropTable = "DROP TABLE " + this->tableName;
-    char *errorMessage = nullptr;
-    int result = sqlite3_exec(db, dropTable.c_str(), nullptr, nullptr, &errorMessage);
-    if (result != SQLITE_OK)
-    {
-        std::cerr << "Error dropping table: " << errorMessage << std::endl;
-        sqlite3_free(errorMessage);
-    }
 }
 
 bool SqliteEntity::insert(std::vector<std::pair<position, value>> values)
