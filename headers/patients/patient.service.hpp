@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <unordered_map>
 #include "IService.hpp"
 #include "patient.repository.hpp"
 
@@ -17,4 +18,6 @@ public:
         std::string address,
         std::string phone,
         std::string medical_history);
+
+    std::unordered_map<std::string, std::string> getMedicalHistory(std::string patient_id);
 };
