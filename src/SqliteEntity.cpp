@@ -13,12 +13,18 @@ SqliteEntity::SqliteEntity(sqlite3 *db, std::string tableName, std::vector<colum
             throw std::runtime_error("Columns cannot be empty");
         }
 
-        auto existingColumns = getExistingColumns();
-
-        if (!existingColumns.empty())
-        {
-            
-        }
+        // auto existingColumns = getExistingColumns();
+        // if (!existingColumns.empty())
+        // {
+        //     std::vector<std::string> column_names;
+        //     for (const auto &column : columns)
+        //     {
+        //         column_names.push_back(column.name);
+        //     }
+        //     auto new_columns = eraseExistingColumns(column_names, existingColumns);
+        //     std<<
+        //     if()
+        // }
 
         std::string createTable = "CREATE TABLE IF NOT EXISTS " + tableName + " (";
         std::string foreignKeys = "";
@@ -80,6 +86,24 @@ std::vector<std::string> SqliteEntity::getExistingColumns()
         &existingColumns, 0);
 
     return existingColumns;
+}
+
+std::vector<std::string> SqliteEntity::eraseExistingColumns(std::vector<std::string> new_columns, std::vector<std::string> existing_columns)
+{
+    std::vector<std::string> columns_for_adding;
+    for (const auto &column : existing_columns)
+    {
+        if (std::find(new_columns.begin(), new_columns.end(), column) == new_columns.end())
+        {
+            columns_for_adding.push_back(column);
+        }
+    }
+    return columns_for_adding;
+}
+
+bool SqliteEntity::alterTable()
+{
+    return true;
 }
 
 bool SqliteEntity::insert(std::vector<std::pair<position, value>> values)

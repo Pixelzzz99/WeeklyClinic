@@ -9,6 +9,7 @@ class SqliteEntity : public IEntity
     std::vector<column> columns;
 
     std::vector<std::string> getExistingColumns();
+    std::vector<std::string> eraseExistingColumns(std::vector<std::string> new_columns, std::vector<std::string> existing_columns);
     bool alterTable();
 
 public:

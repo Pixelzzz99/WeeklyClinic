@@ -17,7 +17,8 @@ std::string PatientService::registerPatient(std::string name, int age, std::stri
                                                   {4, address},
                                                   {5, phone},
                                                   {6, medical_history},
-                                                  {7, patient_id}});
+                                                  {7, std::to_string(0)},
+                                                  {8, patient_id}});
 
     return patient_id;
 }
@@ -28,6 +29,7 @@ std::string PatientService::uuidGenerator()
     uuid_generate_random(uuid);
     char uuid_string[37];
     uuid_unparse(uuid, uuid_string);
+    std::cout << "uuid: " << uuid_string << std::endl;
     return uuid_string;
 }
 
