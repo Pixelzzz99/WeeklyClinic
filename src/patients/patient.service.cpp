@@ -1,5 +1,6 @@
 #include "patient.service.hpp"
 #include <uuid/uuid.h>
+#include <iostream>
 
 PatientService::PatientService(std::shared_ptr<PatientRepository> repository) : repository(repository) {}
 
@@ -16,7 +17,8 @@ std::string PatientService::registerPatient(std::string name, int age, std::stri
                                                   {4, address},
                                                   {5, phone},
                                                   {6, medical_history},
-                                                  {7, patient_id}});
+                                                  {7, std::to_string(0)},
+                                                  {8, patient_id}});
 
     return patient_id;
 }
@@ -27,5 +29,31 @@ std::string PatientService::uuidGenerator()
     uuid_generate_random(uuid);
     char uuid_string[37];
     uuid_unparse(uuid, uuid_string);
+    std::cout << "uuid: " << uuid_string << std::endl;
     return uuid_string;
+}
+
+std::unordered_map<std::string, std::string> PatientService::getMedicalHistory(std::string patient_id)
+{
+    if (patient_id == "")
+    {
+        return {};
+    }
+    auto patients = this->repository->select({"patient_id = '" + patient_id + "'"});
+
+    if (patients.empty())
+    {
+        return {};
+    }
+
+    auto patient = patients[0];
+
+    if (patient.empty())
+    {
+        return {};
+    }
+
+    return {{"patient_id", patient["patient_ID"]},
+            {"patient_name", patient["name"]},
+            {"medical_history", patient["medical_history"]}};
 }

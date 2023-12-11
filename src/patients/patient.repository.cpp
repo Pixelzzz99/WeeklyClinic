@@ -9,6 +9,7 @@ PatientRepository::PatientRepository(SqliteORM *orm) : orm(orm)
                                                           {"address", columnTypes::TEXT},
                                                           {"phone", columnTypes::TEXT},
                                                           {"medical_history", columnTypes::TEXT},
+                                                          {"count_visits", columnTypes::INT},
                                                           {"patient_ID", columnTypes::TEXT}});
 }
 

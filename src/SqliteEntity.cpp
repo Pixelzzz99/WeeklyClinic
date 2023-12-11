@@ -12,6 +12,20 @@ SqliteEntity::SqliteEntity(sqlite3 *db, std::string tableName, std::vector<colum
         {
             throw std::runtime_error("Columns cannot be empty");
         }
+
+        // auto existingColumns = getExistingColumns();
+        // if (!existingColumns.empty())
+        // {
+        //     std::vector<std::string> column_names;
+        //     for (const auto &column : columns)
+        //     {
+        //         column_names.push_back(column.name);
+        //     }
+        //     auto new_columns = eraseExistingColumns(column_names, existingColumns);
+        //     std<<
+        //     if()
+        // }
+
         std::string createTable = "CREATE TABLE IF NOT EXISTS " + tableName + " (";
         std::string foreignKeys = "";
 
@@ -48,6 +62,48 @@ SqliteEntity::SqliteEntity(sqlite3 *db, std::string tableName, std::vector<colum
 
 SqliteEntity::~SqliteEntity()
 {
+}
+
+std::vector<std::string> SqliteEntity::getExistingColumns()
+{
+    std::vector<std::string> existingColumns;
+    std::string query = "PRAGMA table_info(" + tableName + ");";
+
+    sqlite3_exec(
+        db, query.c_str(), [](void *data, int argc, char **argv, char **colNames) -> int
+        {
+        std::vector<std::string> *columns = static_cast<std::vector<std::string> *>(data);
+
+        for (int i = 0; i < argc; ++i)
+        {
+            if (std::string(colNames[i]) == "name")
+            {
+                columns->push_back(argv[i]);
+            }
+        }
+
+        return 0; },
+        &existingColumns, 0);
+
+    return existingColumns;
+}
+
+std::vector<std::string> SqliteEntity::eraseExistingColumns(std::vector<std::string> new_columns, std::vector<std::string> existing_columns)
+{
+    std::vector<std::string> columns_for_adding;
+    for (const auto &column : existing_columns)
+    {
+        if (std::find(new_columns.begin(), new_columns.end(), column) == new_columns.end())
+        {
+            columns_for_adding.push_back(column);
+        }
+    }
+    return columns_for_adding;
+}
+
+bool SqliteEntity::alterTable()
+{
+    return true;
 }
 
 bool SqliteEntity::insert(std::vector<std::pair<position, value>> values)
