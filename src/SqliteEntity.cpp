@@ -12,6 +12,14 @@ SqliteEntity::SqliteEntity(sqlite3 *db, std::string tableName, std::vector<colum
         {
             throw std::runtime_error("Columns cannot be empty");
         }
+
+        auto existingColumns = getExistingColumns();
+
+        if (!existingColumns.empty())
+        {
+            
+        }
+
         std::string createTable = "CREATE TABLE IF NOT EXISTS " + tableName + " (";
         std::string foreignKeys = "";
 
@@ -48,6 +56,30 @@ SqliteEntity::SqliteEntity(sqlite3 *db, std::string tableName, std::vector<colum
 
 SqliteEntity::~SqliteEntity()
 {
+}
+
+std::vector<std::string> SqliteEntity::getExistingColumns()
+{
+    std::vector<std::string> existingColumns;
+    std::string query = "PRAGMA table_info(" + tableName + ");";
+
+    sqlite3_exec(
+        db, query.c_str(), [](void *data, int argc, char **argv, char **colNames) -> int
+        {
+        std::vector<std::string> *columns = static_cast<std::vector<std::string> *>(data);
+
+        for (int i = 0; i < argc; ++i)
+        {
+            if (std::string(colNames[i]) == "name")
+            {
+                columns->push_back(argv[i]);
+            }
+        }
+
+        return 0; },
+        &existingColumns, 0);
+
+    return existingColumns;
 }
 
 bool SqliteEntity::insert(std::vector<std::pair<position, value>> values)

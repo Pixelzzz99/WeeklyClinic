@@ -16,6 +16,9 @@ void PatientController::setupRoutes()
 
     CROW_ROUTE(this->app, "/patient/appointment").methods(crow::HTTPMethod::POST)([&](const crow::request &req, crow::response &res)
                                                                                   { this->bookAppointment(req, res); });
+
+    CROW_ROUTE(this->app, "/patient/medical_history/<string>").methods(crow::HTTPMethod::GET)([&](const crow::request &req, crow::response &res, const std::string &patient_id)
+                                                                                              { this->getMedicalHistory(req, res, patient_id); });
 }
 
 void PatientController::registerPatient(const crow::request &req, crow::response &res)
@@ -101,6 +104,44 @@ void PatientController::bookAppointment(const crow::request &req, crow::response
 
         res.code = 200;
         result["message"] = "Appointment booked successfully in " + date + " at " + time;
+        res.body = result.dump();
+        res.end();
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << e.what() << std::endl;
+        result["message"] = e.what();
+        res.body = result.dump();
+        res.end();
+    }
+}
+
+void PatientController::getMedicalHistory(const crow::request &req, crow::response &res, const std::string &patient_id)
+{
+    res.add_header("Content-Type", "application/json");
+    crow::json::wvalue result = crow::json::wvalue::object();
+    try
+    {
+        const std::string patient_Id = patient_id;
+
+        if (patient_Id.empty())
+        {
+            res.code = 400;
+            throw std::runtime_error("Required fields are empty: patient_id");
+        }
+
+        std::unordered_map<std::string, std::string> result_data = this->patientService->getMedicalHistory(patient_Id);
+
+        if (result_data.empty())
+        {
+            res.code = 400;
+            throw std::runtime_error("Invalid patient_id");
+        }
+
+        res.code = 200;
+        result["patient_name"] = result_data["patient_name"];
+
+        result["medical_history"] = result_data["medical_history"];
         res.body = result.dump();
         res.end();
     }

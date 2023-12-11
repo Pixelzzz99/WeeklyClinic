@@ -8,6 +8,9 @@ class SqliteEntity : public IEntity
     std::string tableName;
     std::vector<column> columns;
 
+    std::vector<std::string> getExistingColumns();
+    bool alterTable();
+
 public:
     SqliteEntity();
     SqliteEntity(sqlite3 *db, std::string tableName, std::vector<column> columns);
