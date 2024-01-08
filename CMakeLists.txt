@@ -8,10 +8,16 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
+# include_directories(/usr/local/include)
+# link_directories(/usr/local/lib)
+# include_directories(/usr/include)
+# link_directories(/usr/lib)
+include_directories(/usr/local/Cellar/boost/1.83.0/include)
+link_directories(/usr/local/Cellar/boost/1.83.0/lib)
+include_directories(/usr/local/Cellar/asio/1.28.1/include)
+link_directories(/usr/local/Cellar/asio/1.28.1/lib)
 include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
-include_directories(/usr/include)
-link_directories(/usr/lib)
 
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Crow/include)
@@ -20,19 +26,22 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers/doctors)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers/patients)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers/appointments)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers/prescriptions)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers/payments)
 
 file(GLOB HEADERS_FILES ./headers/*.hpp 
                         ./headers/doctors/*.hpp
                         ./headeers/patients/*.hpp
                         ./headers/appointments/*.hpp
-                        ./headers/prescriptions/*.hpp)
+                        ./headers/prescriptions/*.hpp
+                        ./headers/payments/*.hpp)
                         
 
 file(GLOB SOURCES_FILES ./src/*.cpp
                         ./src/doctors/*.cpp
                         ./src/patients/*.cpp
                         ./src/appointments/*.cpp
-                        ./src/prescriptions/*.cpp)
+                        ./src/prescriptions/*.cpp
+                        ./src/payments/*.cpp)
 
 add_executable(cpp_weekly_report main.cpp ${SOURCES_FILES} ${HEADERS_FILES})
 
