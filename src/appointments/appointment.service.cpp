@@ -10,17 +10,17 @@ AppointmentService::AppointmentService(std::shared_ptr<AppointmentRepository> re
 
 std::string AppointmentService::bookingPatient(std::string patient_id, int doctor_id, std::string date, std::string time)
 {
-    if (!isValidDate(date))
+    if (!this->isValidDate(date))
     {
         return "Date should be in format: 01-01-2023";
     }
 
-    if (!isValidTime(time))
+    if (!this->isValidTime(time))
     {
         return "Time should be in format: 14:00, 15:00,.... From 07:00 to 19:00";
     }
 
-    if (!isDateInFuture(date))
+    if (!this->isDateInFuture(date))
     {
         return "Date should be in the future";
     }
