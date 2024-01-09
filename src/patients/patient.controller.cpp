@@ -116,6 +116,10 @@ void PatientController::bookAppointment(const crow::request &req, crow::response
     }
 }
 
+// void PatientController::bookPayment(const crow::request & req, crow::response &res){
+
+// }
+
 void PatientController::getMedicalHistory(const crow::request &req, crow::response &res, const std::string &patient_id)
 {
     res.add_header("Content-Type", "application/json");

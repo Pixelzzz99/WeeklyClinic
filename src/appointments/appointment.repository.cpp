@@ -8,7 +8,9 @@ AppointmentRepository::AppointmentRepository(SqliteORM *orm) : orm(orm)
                                                            {"doctor_id", columnTypes::INT, false, true, "doctors", "id"},
                                                            {"dateAppointment", columnTypes::TEXT},
                                                            {"timeAppointment", columnTypes::TEXT},
-                                                           {"status", columnTypes::TEXT}});
+                                                           {"status", columnTypes::TEXT},
+                                                           {"amount", columnTypes::FLOAT},
+                                                           {"payment_id", columnTypes::TEXT}});
 }
 
 AppointmentRepository::~AppointmentRepository()
