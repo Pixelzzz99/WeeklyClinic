@@ -1,10 +1,11 @@
 #include "payment.repository.hpp"
+#include <iostream>
 
 PaymentRepository::PaymentRepository(SqliteORM *orm) : orm(orm)
 {
     this->payments = this->orm->createEntity("payments", {{"id", columnTypes::INT, true},
                                                           {"payment_id", columnTypes::TEXT},
-                                                          {"amount", columnTypes::DOUBLE},
+                                                          {"amount", columnTypes::FLOAT},
                                                           {"pan", columnTypes::TEXT},
                                                           {"expired", columnTypes::TEXT},
                                                           {"createdDate", columnTypes::TEXT},
@@ -18,6 +19,7 @@ PaymentRepository::~PaymentRepository()
 
 std::vector<std::map<std::string, std::string>> PaymentRepository::select(std::vector<std::string> conditions)
 {
+    std::cout << "conditions: " << conditions[0] << std::endl;
     return this->payments->select(conditions);
 }
 

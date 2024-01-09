@@ -14,7 +14,7 @@ PaymentService::~PaymentService()
 {
 }
 
-std::unordered_map<std::string, std::string> createPayment(double amount)
+std::unordered_map<std::string, std::string> PaymentService::createPayment(double amount)
 {
     if (amount <= 0)
     {
@@ -24,13 +24,13 @@ std::unordered_map<std::string, std::string> createPayment(double amount)
     const std::string payment_id = this->generatePaymentId();
     const std::string createdTime = this->currentDateTime();
 
-    const bool result = repository->insert({
+    const bool result = this->repository->insert({
         {1, payment_id},
         {2, std::to_string(amount)},
-        {3, std::to_string("")},
-        {4, std::to_string("")},
+        {3, std::to_string(0)},
+        {4, std::to_string(0)},
         {5, createdTime},
-        {6, std::to_string("")},
+        {6, std::to_string(0)},
         {7, paymentStatus::PENDING},
     });
 
@@ -39,10 +39,9 @@ std::unordered_map<std::string, std::string> createPayment(double amount)
         throw std::runtime_error("Failed to create payment");
     }
 
-    return
-    {
+    return {
         {"payment_id", payment_id},
-    }
+    };
 }
 
 std::unordered_map<std::string, std::string> PaymentService::payment(std::string payment_id, std::string pan, std::string cvv, std::string expiry_date)
@@ -55,53 +54,71 @@ std::unordered_map<std::string, std::string> PaymentService::payment(std::string
 
     const std::string paymentDate = this->currentDateTime();
 
-    auto payments = repository->select({{"payment_id=" + payment_id}});
+    auto payments = this->repository->select({"payment_id='" + payment_id + "'"});
+
+    if (payments.size() == 0)
+    {
+        throw std::runtime_error("Invalid payment id");
+    }
+
+    int id = std::stoi(payments[0]["id"]);
 
     if (!this->withdraw(std::stod(payments[0]["amount"]), pan))
     {
-        const bool result = repository->update(id, {
-                                                       {3, pan},
-                                                       {4, expiry_date},
-                                                       {6, paymentDate},
-                                                       {7, paymentStatus::FAILED},
-                                                   });
+        this->updatePaymentStatus({
+            .id = id,
+            .pan = pan,
+            .expiry_date = expiry_date,
+            .paymentStatus = paymentStatus::FAILED,
+        });
 
-        return
-        {
+        return {
             {"payment_id", payment_id},
-                {"status", paymentStatus::FAILED},
-        }
+            {"status", paymentStatus::FAILED},
+        };
     }
 
-    const bool result = repository->update(id, {
-                                                   {3, pan},
-                                                   {4, expiry_date},
-                                                   {6, paymentDate},
-                                                   {7, paymentStatus::SUCCESS},
-                                               });
-
-    if (!result)
+    if (!this->updatePaymentStatus({
+            .id = id,
+            .pan = pan,
+            .expiry_date = expiry_date,
+            .paymentStatus = paymentStatus::SUCCESS,
+        }))
     {
-        const bool result = repository->update(id, {
-                                                       {3, pan},
-                                                       {4, expiry_date},
-                                                       {6, paymentDate},
-                                                       {7, paymentStatus::FAILED},
-                                                   });
+        const bool result = this->repository->update(id, {
+                                                             {"status", paymentStatus::FAILED},
+                                                         });
 
-        return
-        {
+        return {
             {"payment_id", payment_id},
-                {"status", paymentStatus::FAILED},
-        }
+            {"status", paymentStatus::FAILED},
+        };
     }
 
-    return
-    {
+    return {
         {"payment_id", payment_id},
-            {"paymentDate", paymentDate},
-            {"status", paymentStatus::SUCCESS},
-    }
+        {"paymentDate", paymentDate},
+        {"status", paymentStatus::SUCCESS},
+    };
+}
+
+bool PaymentService::isCardValid(std::string pan, std::string cvv, std::string expiry_date)
+{
+    std::regex cardPattern("^[0-9]{16}$");
+    std::regex cvvPattern("^[0-9]{3}$");
+    std::regex expiryDatePattern("^(0[1-9]|1[0-2])/?([0-9]{4}|[0-9]{2})$");
+    return std::regex_match(pan, cardPattern) && std::regex_match(cvv, cvvPattern) && std::regex_match(expiry_date, expiryDatePattern);
+}
+
+bool PaymentService::updatePaymentStatus(PaymentUpdateParams params)
+{
+    std::string paymentDate = this->currentDateTime();
+    return this->repository->update(params.id, {
+                                                   {"pan", params.pan},
+                                                   {"expired", params.expiry_date},
+                                                   {"paymentDate", paymentDate},
+                                                   {"status", params.paymentStatus},
+                                               });
 }
 
 bool PaymentService::withdraw(double amount, std::string pan)
@@ -113,13 +130,13 @@ bool PaymentService::withdraw(double amount, std::string pan)
 std::unordered_map<std::string, std::string> PaymentService::getPaymentStatus(std::string payment_id)
 {
     return {
-        {"status", repository->getPaymentStatusFromDB(payment_id)},
+        {"status", this->getPaymentStatusFromDB(payment_id)},
     };
 }
 
 std::string PaymentService::getPaymentStatusFromDB(std::string payment_id)
 {
-    auto payments = repository->select({{"payment_id", payment_id}});
+    auto payments = this->repository->select({{"payment_id='" + payment_id + "'"}});
     if (payments.size() > 0)
     {
         return payments[0]["status"];
@@ -129,7 +146,11 @@ std::string PaymentService::getPaymentStatusFromDB(std::string payment_id)
 
 std::string PaymentService::generatePaymentId()
 {
-    return uuids::to_string(uuids::uuid_system_generator{}());
+    uuid_t uuid;
+    uuid_generate_random(uuid);
+    char payment_id[37];
+    uuid_unparse(uuid, payment_id);
+    return payment_id;
 }
 
 std::string PaymentService::currentDateTime()
@@ -140,12 +161,4 @@ std::string PaymentService::currentDateTime()
     tstruct = *localtime(&now);
     strftime(buf, sizeof(buf), "%Y-%m-%d %X", &tstruct);
     return buf;
-}
-
-bool PaymentService::isCardValid(std::string pan, std::string cvv, std::string expiry_date)
-{
-    std::regex cardPattern("^[0-9]{16}$");
-    std::regex cvvPattern("^[0-9]{3}$");
-    std::regex expiryDatePattern("^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[012])-[0-9]{4}$");
-    return std::regex_match(pan, cardPattern) && std::regex_match(cvv, cvvPattern) && std::regex_match(expiry_date, expiryDatePattern);
 }

@@ -3,6 +3,7 @@
 #include "doctor.repository.hpp"
 #include "patient.repository.hpp"
 #include "prescription.repository.hpp"
+#include <unordered_map>
 #include <chrono>
 #include <sstream>
 #include <iomanip>
