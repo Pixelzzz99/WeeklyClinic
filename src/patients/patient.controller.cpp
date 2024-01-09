@@ -102,7 +102,7 @@ void PatientController::bookAppointment(const crow::request &req, crow::response
 
         res.code = 200;
         result["paymentId"] = paymentId;
-        result["url"] = "http://localhost:3000/payment/" + paymentId;
+        result["url"] = "http://localhost:18080/payment/" + paymentId;
         result["message"] = "Please make payment to book appointment";
         res.body = result.dump();
         res.end();
@@ -116,7 +116,7 @@ void PatientController::bookAppointment(const crow::request &req, crow::response
     }
 }
 
-void PatientController::bookPayment(const crow::request & req, crow::response &res, const std::string &paymentId)
+void PatientController::bookPayment(const crow::request &req, crow::response &res, const std::string &paymentId)
 {
     auto json = crow::json::load(req.body);
     res.add_header("Content-Type", "application/json");
@@ -146,7 +146,7 @@ void PatientController::bookPayment(const crow::request & req, crow::response &r
         result["message"] = status;
         res.body = result.dump();
         res.end();
-    }   
+    }
     catch (const std::exception &e)
     {
         std::cout << e.what() << std::endl;

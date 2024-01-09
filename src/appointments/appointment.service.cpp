@@ -19,24 +19,24 @@ std::string AppointmentService::bookingPatient(BookingParams params)
 
     if (!this->isValidDate(date))
     {
-        return "Date should be in format: 01-01-2023";
+        throw std::runtime_error("Date should be in format: 01-01-2023");
     }
 
     if (!this->isValidTime(time))
     {
-        return "Time should be in format: 14:00, 15:00,.... From 07:00 to 19:00";
+        throw std::runtime_error("Time should be in format: 14:00, 15:00,.... From 07:00 to 19:00");
     }
 
     if (!this->isDateInFuture(date))
     {
-        return "Date should be in the future";
+        throw std::runtime_error("Date should be in the future");
     }
 
     auto apointmentExist = repository->select({"doctor_id=" + std::to_string(doctor_id), "dateAppointment='" + date + "'", "timeAppointment='" + time + "'"});
 
     if (apointmentExist.size() > 0)
     {
-        return "This doctor is not available at this time";
+        throw std::runtime_error("This doctor is not available at this time");
     }
 
     auto payment = this->paymentService->createPayment(amount);
@@ -50,7 +50,7 @@ std::string AppointmentService::bookingPatient(BookingParams params)
 
     if (!isBookingCreated)
     {
-        return "Something went wrong, please try again";
+        throw std::runtime_error("Something went wrong, please try again");
     }
     return payment["payment_id"];
 }

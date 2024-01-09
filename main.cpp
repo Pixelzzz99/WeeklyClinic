@@ -33,22 +33,21 @@ int main()
   std::shared_ptr<PrescriptionRepository> prescriptions = std::make_shared<PrescriptionRepository>(orm);
   std::shared_ptr<PaymentRepository> payments = std::make_shared<PaymentRepository>(orm);
 
-  // std::shared_ptr<PatientService> patientService = std::make_shared<PatientService>(patients);
+  std::shared_ptr<PatientService> patientService = std::make_shared<PatientService>(patients);
   std::shared_ptr<PaymentService> paymentService = std::make_shared<PaymentService>(payments);
   std::shared_ptr<AppointmentService> appointmentService = std::make_shared<AppointmentService>(appointments, paymentService);
-  // std::shared_ptr<DoctorService> doctorService = std::make_shared<DoctorService>(doctors, patients, prescriptions);
+  std::shared_ptr<DoctorService> doctorService = std::make_shared<DoctorService>(doctors, patients, prescriptions);
 
-  // std::shared_ptr<PatientController> patientController = std::make_shared<PatientController>(app, patientService, appointmentService);
-  // std::shared_ptr<DoctorController> doctorController = std::make_shared<DoctorController>(app, doctorService);
+  std::shared_ptr<PatientController> patientController = std::make_shared<PatientController>(app, patientService, appointmentService);
+  std::shared_ptr<DoctorController> doctorController = std::make_shared<DoctorController>(app, doctorService);
 
-  // app.port(18080).multithreaded().run();
+  app.port(18080).multithreaded().run();
 
-  auto result = appointmentService->bookingPatient({"1", 1, "23-01-2024", "14:00", 100});
-  std::cout << result << std::endl;
+  // auto result = appointmentService->bookingPatient({"1", 1, "23-01-2024", "14:00", 100});
+  // std::cout << result << std::endl;
 
-  auto resultPayment = appointmentService->bookingPayment({result, "1234567890123456", "123", "12/22"});
-  std::cout << resultPayment << std::endl;
-
+  // auto resultPayment = appointmentService->bookingPayment({result, "1234567890123456", "123", "12/22"});
+  // std::cout << resultPayment << std::endl;
 
   // auto result = paymentService->createPayment(100);
   // std::cout << "PAYMANT_ID: " << result["payment_id"] << std::endl;
