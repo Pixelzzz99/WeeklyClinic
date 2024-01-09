@@ -94,7 +94,7 @@ void PatientController::bookAppointment(const crow::request &req, crow::response
             throw std::runtime_error("Required fields are empty: patient_id, doctor_id, date, time");
         }
 
-        const std::string bookingMassage = this->appointmentService->bookingPatient(patient_id, stoi(doctor_id), date, time);
+        const std::string bookingMassage = this->appointmentService->bookingPatient({patient_id, stoi(doctor_id), date, time});
 
         if (bookingMassage != "Appointment booked successfully in " + date + " at " + time)
         {
