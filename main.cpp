@@ -43,17 +43,5 @@ int main()
 
   app.port(18080).multithreaded().run();
 
-  // auto result = appointmentService->bookingPatient({"1", 1, "23-01-2024", "14:00", 100});
-  // std::cout << result << std::endl;
-
-  // auto resultPayment = appointmentService->bookingPayment({result, "1234567890123456", "123", "12/22"});
-  // std::cout << resultPayment << std::endl;
-
-  // auto result = paymentService->createPayment(100);
-  // std::cout << "PAYMANT_ID: " << result["payment_id"] << std::endl;
-  // auto resultPayment = paymentService->payment(result["payment_id"], "1234567890123456", "123", "12/22");
-
-  // std::cout << resultPayment["status"] << std::endl;
-  // std::cout << paymentService->getPaymentStatus(resultPayment["payment_id"])["status"] << std::endl;
   return 0;
 }
