@@ -1,12 +1,13 @@
 #include "doctor.service.hpp"
-#include "doctor.repository.hpp"
 #include <string>
 
 DoctorService::DoctorService(std::shared_ptr<DoctorRepository> repository,
                              std::shared_ptr<PatientRepository> patientRepository,
-                             std::shared_ptr<PrescriptionRepository> prescriptionRepository) : doctorsRepository(repository),
-                                                                                               patientsRepository(patientRepository),
-                                                                                               prescriptionRepository(prescriptionRepository) {}
+                             std::shared_ptr<PrescriptionRepository> prescriptionRepository,
+                             std::shared_ptr<SuppliesService> suppliesService) : doctorsRepository(repository),
+                                                                                 patientsRepository(patientRepository),
+                                                                                 prescriptionRepository(prescriptionRepository),
+                                                                                 suppliesService(suppliesService) {}
 
 std::string DoctorService::registerDoctor(std::string name, std::string specialization, std::string address, std::string phone)
 {
@@ -34,6 +35,8 @@ std::unordered_map<std::string, std::string> DoctorService::prescribeMedication(
     {
         return {};
     }
+
+    // TODO: check prescriptions and supplies
 
     auto resultInsert = this->prescriptionRepository->insert({{1, patient_id},
                                                               {2, doctor_id},
@@ -99,4 +102,15 @@ std::string DoctorService::getTodayDate()
     std::stringstream ss;
     ss << std::put_time(std::localtime(&now_time), "%d-%m-%Y");
     return ss.str();
+}
+
+bool DoctorService::alertAllDoctors(std::string message)
+{
+    // TODO: implement
+}
+
+bool DoctorService::checkInventoryOrAlerts()
+{
+    // TODO: implement
+    return true;
 }
