@@ -1,4 +1,5 @@
 #include "supplies.service.hpp"
+#include <iostream>
 
 SuppliesService::SuppliesService(std::shared_ptr<SuppliesRepository> repository) : suppliesRepository(repository) {}
 
@@ -13,7 +14,6 @@ bool SuppliesService::addSupplies(std::vector<Supplie> values)
     {
 
         auto supplies = suppliesRepository->select({{"name='" + value.name + "'"}});
-
         if (supplies.size() == 0)
         {
             if (!suppliesRepository->insert({{1, value.name},
@@ -119,7 +119,6 @@ bool SuppliesService::updateSupplies(int id, int quantity)
 {
 
     auto supplies = suppliesRepository->select({{"id=" + std::to_string(id)}});
-
     if (supplies.size() == 0)
     {
         return false;

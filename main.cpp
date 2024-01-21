@@ -29,10 +29,10 @@ int main()
 
   SqliteORM *orm = new SqliteORM();
   orm->connect("clinic.db");
-  // std::shared_ptr<PatientRepository> patients = std::make_shared<PatientRepository>(orm);
+  std::shared_ptr<PatientRepository> patients = std::make_shared<PatientRepository>(orm);
   // std::shared_ptr<DoctorRepository> doctors = std::make_shared<DoctorRepository>(orm);
   // std::shared_ptr<AppointmentRepository> appointments = std::make_shared<AppointmentRepository>(orm);
-  // std::shared_ptr<PrescriptionRepository> prescriptions = std::make_shared<PrescriptionRepository>(orm);
+  std::shared_ptr<PrescriptionRepository> prescriptions = std::make_shared<PrescriptionRepository>(orm);
   // std::shared_ptr<PaymentRepository> payments = std::make_shared<PaymentRepository>(orm);
   // std::shared_ptr<SuppliesRepository> supplies = std::make_shared<SuppliesRepository>(orm);
 
@@ -62,25 +62,13 @@ int main()
   std::shared_ptr<SuppliesRepository> supplies = std::make_shared<SuppliesRepository>(orm);
   std::shared_ptr<SuppliesService> suppliesService = std::make_shared<SuppliesService>(supplies);
 
-  auto result = suppliesService->getSupplies();
-  for (auto supplie : result)
-  {
-    std::cout << supplie.name << " " << supplie.quantity << " " << supplie.price << std::endl;
-  }
+  // suppliesService->addSupplies({{"Antibiotics", 6, 1}});
 
-  auto inventory = suppliesService->checkInventory();
-  for (auto supplie : inventory)
-  {
-    std::cout << supplie.first << " " << supplie.second << std::endl;
-  }
+  std::shared_ptr<DoctorRepository> doctors = std::make_shared<DoctorRepository>(orm);
 
-  suppliesService->useSupplies("Bandage", 50);
+  std::shared_ptr<DoctorService> doctorService = std::make_shared<DoctorService>(doctors, patients, prescriptions, suppliesService);
 
-  inventory = suppliesService->checkInventory();
-  for (auto supplie : inventory)
-  {
-    std::cout << supplie.first << " " << supplie.second << std::endl;
-  }
-
+  auto result = doctorService->prescribeMedication("1", "B7916D0D-AF70-4D4B-8216-D7E24868DA65", "Bandage", 40);
+  std::cout << result["message"] << std::endl;
   return 0;
 }

@@ -19,7 +19,7 @@ class DoctorService
 
     std::string getTodayDate();
 
-    bool alertAllDoctors(std::string message);
+    void alertAllDoctors(const std::string &message);
     bool checkInventoryOrAlerts();
 
 public:
@@ -32,5 +32,5 @@ public:
 
     std::string registerDoctor(std::string name, std::string specialization, std::string address, std::string phone);
     bool updatePatientMedicalHistory(std::string patient_id, std::string medical_history);
-    std::unordered_map<std::string, std::string> prescribeMedication(std::string doctor_id, std::string patient_id, std::string prescription);
+    std::unordered_map<std::string, std::string> prescribeMedication(std::string doctor_id, std::string patient_id, std::string prescription, int count);
 };

@@ -1,5 +1,5 @@
 #include "doctor.service.hpp"
-#include <string>
+#include <iostream>
 
 DoctorService::DoctorService(std::shared_ptr<DoctorRepository> repository,
                              std::shared_ptr<PatientRepository> patientRepository,
@@ -24,37 +24,72 @@ std::string DoctorService::registerDoctor(std::string name, std::string speciali
     return name;
 }
 
-std::unordered_map<std::string, std::string> DoctorService::prescribeMedication(std::string doctor_id, std::string patient_id, std::string prescription)
+std::unordered_map<std::string, std::string> DoctorService::prescribeMedication(std::string doctor_id, std::string patient_id, std::string prescription, int count)
 {
     if (doctor_id.empty() || patient_id.empty() || prescription.empty())
     {
-        return {};
+        return {
+            {"status", "failed"},
+            {"message", "doctor_id, patient_id, prescription cannot be empty"}};
     }
 
     if (!this->existsDoctor(doctor_id) || !this->existsPatient(patient_id))
     {
-        return {};
+        return {
+            {"status", "failed"},
+            {"message", "doctor_id or patient_id does not exist"}};
     }
 
-    // TODO: check prescriptions and supplies
+    auto supplies = this->suppliesService->getSupplies(prescription);
 
-    auto resultInsert = this->prescriptionRepository->insert({{1, patient_id},
-                                                              {2, doctor_id},
-                                                              {3, prescription},
-                                                              {4, this->getTodayDate()}});
-    if (!resultInsert)
+    if (supplies.empty())
     {
-        return {};
+        return {
+            {"status", "failed"},
+            {"message", "prescription not found"},
+        };
+    }
+    const auto &supply = supplies.front();
+
+    if (!this->prescriptionRepository->insert({{1, patient_id},
+                                               {2, doctor_id},
+                                               {3, supply.name},
+                                               {4, this->getTodayDate()}}))
+    {
+        return {
+            {"status", "failed"},
+            {"message", "prescription not found"},
+        };
     }
 
-    bool isPatientDataUpdated = this->updatePatientMedicalHistory(patient_id, prescription);
-
-    if (!isPatientDataUpdated)
+    if (!this->checkInventoryOrAlerts())
     {
-        return {};
+        return {
+            {"status", "failed"},
+            {"message", "prescription cant be used"},
+        };
+    }
+
+    if (!this->suppliesService->useSupplies(prescription, count))
+    {
+        return {
+            {"status", "failed"},
+            {"message", "prescription cant be used"},
+        };
+    }
+
+    if (!this->updatePatientMedicalHistory(patient_id,
+                                           prescription + " " + std::to_string(count) + " counts"))
+
+    {
+        return {
+            {"status", "failed"},
+            {"message", "patient medical history not updated"},
+        };
     }
 
     return {
+        {"status", "success"},
         {"patient_id", patient_id},
         {"prescription", "Patient has been prescribed: " + prescription},
     };
@@ -104,13 +139,32 @@ std::string DoctorService::getTodayDate()
     return ss.str();
 }
 
-bool DoctorService::alertAllDoctors(std::string message)
+void DoctorService::alertAllDoctors(const std::string &message)
 {
-    // TODO: implement
+    auto doctors = doctorsRepository->select({});
+
+    for (auto &doctor : doctors)
+    {
+        const std::string doctorName = doctor["name"];
+        std::cout << "Alerting: " << doctorName << " with message: " << message << std::endl;
+    }
 }
 
 bool DoctorService::checkInventoryOrAlerts()
 {
-    // TODO: implement
+    const auto &inventory = this->suppliesService->checkInventory();
+    for (const auto &supplie : inventory)
+    {
+        if (supplie.second < 5)
+        {
+            this->alertAllDoctors("Low inventory for: " + supplie.first);
+            return true;
+        }
+        if (supplie.second <= 0)
+        {
+            this->alertAllDoctors("No inventory for: " + supplie.first);
+            return false;
+        }
+    }
     return true;
 }
