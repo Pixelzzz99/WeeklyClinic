@@ -81,7 +81,7 @@ void DoctorController::prescribeMedication(const crow::request &req, crow::respo
         const std::string prescription = json["prescription"].s();
         const int count = json["count"].i();
 
-        if (doctor_id.empty() || patient_id.empty() || prescription.empty() || count)
+        if (doctor_id.empty() || patient_id.empty() || prescription.empty() || !count)
         {
             res.code = 400;
             throw std::runtime_error("Required fields are empty: doctor_id, patient_id, prescription, count");

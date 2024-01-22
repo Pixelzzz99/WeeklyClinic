@@ -22,7 +22,19 @@ void SuppliesController::getSupplies(const crow::request &req, crow::response &r
     try
     {
         res.code = 200;
-        result["supplies"] = this->suppliesService->getSupplies();
+        auto supplies = this->suppliesService->getSupplies();
+        if (supplies.empty())
+        {
+            res.code = 404;
+            throw std::runtime_error("Supplies not found");
+        }
+        for (auto i = 0; i < supplies.size(); i++)
+        {
+            result["supplies"][i]["name"] = supplies[i].name;
+            result["supplies"][i]["quantity"] = supplies[i].quantity;
+            result["supplies"][i]["price"] = supplies[i].price;
+        }
+
         res.body = result.dump();
         res.end();
     }
@@ -38,7 +50,6 @@ void SuppliesController::getSupplies(const crow::request &req, crow::response &r
 void SuppliesController::addSupplies(const crow::request &req, crow::response &res)
 {
     auto json = crow::json::load(req.body);
-
     res.add_header("Content-Type", "application/json");
     crow::json::wvalue result = crow::json::wvalue::object();
 
@@ -50,7 +61,7 @@ void SuppliesController::addSupplies(const crow::request &req, crow::response &r
             throw std::runtime_error("Invalid JSON");
         }
 
-        auto values = json.lo();
+        auto values = json["supplies"];
         std::vector<Supplie> newSupplies = {};
 
         for (auto value : values)
@@ -58,7 +69,7 @@ void SuppliesController::addSupplies(const crow::request &req, crow::response &r
             const std::string name = value["name"].s();
             const int quantity = value["quantity"].i();
             const float price = value["price"].d();
-            if (name.empty() || quantity || price)
+            if (name.empty() || !quantity || !price)
             {
                 res.code = 400;
                 throw std::runtime_error("Required fields are empty: name, quantity, price");
@@ -69,7 +80,7 @@ void SuppliesController::addSupplies(const crow::request &req, crow::response &r
 
         this->suppliesService->addSupplies(newSupplies);
 
-        res.code = 200;
+        res.code = 201;
         result["message"] = "Supplies added successfully";
         res.body = result.dump();
         res.end();
