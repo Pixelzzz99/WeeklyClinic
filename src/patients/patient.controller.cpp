@@ -19,6 +19,9 @@ void PatientController::setupRoutes()
 
     CROW_ROUTE(this->app, "/patient/medical_history/<string>").methods(crow::HTTPMethod::GET)([&](const crow::request &req, crow::response &res, const std::string &patient_id)
                                                                                               { this->getMedicalHistory(req, res, patient_id); });
+
+    CROW_ROUTE(this->app, "/payment/<string>").methods(crow::HTTPMethod::POST)([&](const crow::request &req, crow::response &res, const std::string &payment_id)
+                                                                               { this->bookPayment(req, res, payment_id); });
 }
 
 void PatientController::registerPatient(const crow::request &req, crow::response &res)
@@ -87,6 +90,7 @@ void PatientController::bookAppointment(const crow::request &req, crow::response
         const std::string doctor_id = json["doctor_id"].s();
         const std::string date = json["date"].s();
         const std::string time = json["time"].s();
+        const std::string amount = json["amount"].s();
 
         if (patient_id.empty() || doctor_id.empty() || date.empty() || time.empty())
         {
@@ -94,16 +98,52 @@ void PatientController::bookAppointment(const crow::request &req, crow::response
             throw std::runtime_error("Required fields are empty: patient_id, doctor_id, date, time");
         }
 
-        const std::string bookingMassage = this->appointmentService->bookingPatient(patient_id, stoi(doctor_id), date, time);
-
-        if (bookingMassage != "Appointment booked successfully in " + date + " at " + time)
-        {
-            res.code = 400;
-            throw std::runtime_error(bookingMassage);
-        }
+        const std::string paymentId = this->appointmentService->bookingPatient({patient_id, stoi(doctor_id), date, time, stof(amount)});
 
         res.code = 200;
-        result["message"] = "Appointment booked successfully in " + date + " at " + time;
+        result["paymentId"] = paymentId;
+        result["url"] = "http://localhost:18080/payment/" + paymentId;
+        result["message"] = "Please make payment to book appointment";
+        res.body = result.dump();
+        res.end();
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << e.what() << std::endl;
+        result["message"] = e.what();
+        res.body = result.dump();
+        res.end();
+    }
+}
+
+void PatientController::bookPayment(const crow::request &req, crow::response &res, const std::string &paymentId)
+{
+    auto json = crow::json::load(req.body);
+    res.add_header("Content-Type", "application/json");
+    crow::json::wvalue result = crow::json::wvalue::object();
+
+    try
+    {
+        if (paymentId.empty())
+        {
+            res.code = 400;
+            throw std::runtime_error("Required fields are empty: paymentId");
+        }
+
+        const std::string pan = json["pan"].s();
+        const std::string cvv = json["cvv"].s();
+        const std::string expiry_date = json["expiry_date"].s();
+
+        if (pan.empty() || cvv.empty() || expiry_date.empty())
+        {
+            res.code = 400;
+            throw std::runtime_error("Required fields are empty: pan, cvv, expiry_date");
+        }
+
+        const std::string status = this->appointmentService->bookingPayment({paymentId, pan, cvv, expiry_date});
+
+        res.code = 200;
+        result["message"] = status;
         res.body = result.dump();
         res.end();
     }

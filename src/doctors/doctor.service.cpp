@@ -1,12 +1,13 @@
 #include "doctor.service.hpp"
-#include "doctor.repository.hpp"
-#include <string>
+#include <iostream>
 
 DoctorService::DoctorService(std::shared_ptr<DoctorRepository> repository,
                              std::shared_ptr<PatientRepository> patientRepository,
-                             std::shared_ptr<PrescriptionRepository> prescriptionRepository) : doctorsRepository(repository),
-                                                                                               patientsRepository(patientRepository),
-                                                                                               prescriptionRepository(prescriptionRepository) {}
+                             std::shared_ptr<PrescriptionRepository> prescriptionRepository,
+                             std::shared_ptr<SuppliesService> suppliesService) : doctorsRepository(repository),
+                                                                                 patientsRepository(patientRepository),
+                                                                                 prescriptionRepository(prescriptionRepository),
+                                                                                 suppliesService(suppliesService) {}
 
 std::string DoctorService::registerDoctor(std::string name, std::string specialization, std::string address, std::string phone)
 {
@@ -23,35 +24,72 @@ std::string DoctorService::registerDoctor(std::string name, std::string speciali
     return name;
 }
 
-std::unordered_map<std::string, std::string> DoctorService::prescribeMedication(std::string doctor_id, std::string patient_id, std::string prescription)
+std::unordered_map<std::string, std::string> DoctorService::prescribeMedication(std::string doctor_id, std::string patient_id, std::string prescription, int count)
 {
     if (doctor_id.empty() || patient_id.empty() || prescription.empty())
     {
-        return {};
+        return {
+            {"status", "failed"},
+            {"message", "doctor_id, patient_id, prescription cannot be empty"}};
     }
 
     if (!this->existsDoctor(doctor_id) || !this->existsPatient(patient_id))
     {
-        return {};
+        return {
+            {"status", "failed"},
+            {"message", "doctor_id or patient_id does not exist"}};
     }
 
-    auto resultInsert = this->prescriptionRepository->insert({{1, patient_id},
-                                                              {2, doctor_id},
-                                                              {3, prescription},
-                                                              {4, this->getTodayDate()}});
-    if (!resultInsert)
+    auto supplies = this->suppliesService->getSupplies(prescription);
+
+    if (supplies.empty())
     {
-        return {};
+        return {
+            {"status", "failed"},
+            {"message", "prescription not found"},
+        };
+    }
+    const auto &supply = supplies.front();
+
+    if (!this->prescriptionRepository->insert({{1, patient_id},
+                                               {2, doctor_id},
+                                               {3, supply.name},
+                                               {4, this->getTodayDate()}}))
+    {
+        return {
+            {"status", "failed"},
+            {"message", "prescription not found"},
+        };
     }
 
-    bool isPatientDataUpdated = this->updatePatientMedicalHistory(patient_id, prescription);
-
-    if (!isPatientDataUpdated)
+    if (!this->checkInventoryOrAlerts())
     {
-        return {};
+        return {
+            {"status", "failed"},
+            {"message", "prescription cant be used"},
+        };
+    }
+
+    if (!this->suppliesService->useSupplies(prescription, count))
+    {
+        return {
+            {"status", "failed"},
+            {"message", "prescription cant be used"},
+        };
+    }
+
+    if (!this->updatePatientMedicalHistory(patient_id,
+                                           prescription + " " + std::to_string(count) + " counts"))
+
+    {
+        return {
+            {"status", "failed"},
+            {"message", "patient medical history not updated"},
+        };
     }
 
     return {
+        {"status", "success"},
         {"patient_id", patient_id},
         {"prescription", "Patient has been prescribed: " + prescription},
     };
@@ -99,4 +137,34 @@ std::string DoctorService::getTodayDate()
     std::stringstream ss;
     ss << std::put_time(std::localtime(&now_time), "%d-%m-%Y");
     return ss.str();
+}
+
+void DoctorService::alertAllDoctors(const std::string &message)
+{
+    auto doctors = doctorsRepository->select({});
+
+    for (auto &doctor : doctors)
+    {
+        const std::string doctorName = doctor["name"];
+        std::cout << "Alerting: " << doctorName << " with message: " << message << std::endl;
+    }
+}
+
+bool DoctorService::checkInventoryOrAlerts()
+{
+    const auto &inventory = this->suppliesService->checkInventory();
+    for (const auto &supplie : inventory)
+    {
+        if (supplie.second < 5)
+        {
+            this->alertAllDoctors("Low inventory for: " + supplie.first);
+            return true;
+        }
+        if (supplie.second <= 0)
+        {
+            this->alertAllDoctors("No inventory for: " + supplie.first);
+            return false;
+        }
+    }
+    return true;
 }

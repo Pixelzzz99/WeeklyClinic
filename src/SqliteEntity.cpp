@@ -253,7 +253,7 @@ std::vector<std::map<std::string, std::string>> SqliteEntity::select(std::vector
             std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
             throw std::runtime_error("Internal server error");
         }
-        std::cout << "selectQuery: " << selectQuery << std::endl;
+        // std::cout << "selectQuery: " << selectQuery << std::endl;
         rc = sqlite3_step(stmt);
 
         if (rc != SQLITE_ROW)
@@ -317,7 +317,7 @@ bool SqliteEntity::update(int id, std::vector<std::pair<std::string, value>> val
         updateQuery = updateQuery.substr(0, updateQuery.size() - 2);
         updateQuery += " WHERE id = " + std::to_string(id);
 
-        std::cout << updateQuery << std::endl;
+        // std::cout << updateQuery << std::endl;
 
         int rc = sqlite3_exec(db, updateQuery.c_str(), nullptr, nullptr, nullptr);
         if (rc != SQLITE_OK)

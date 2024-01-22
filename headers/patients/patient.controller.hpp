@@ -12,6 +12,7 @@ class PatientController
     std::shared_ptr<AppointmentService> appointmentService;
     void registerPatient(const crow::request &req, crow::response &res);
     void bookAppointment(const crow::request &req, crow::response &res);
+    void bookPayment(const crow::request &req, crow::response &res, const std::string &paymentId);
     void getMedicalHistory(const crow::request &req, crow::response &res, const std::string &patient_id);
 
 public:
