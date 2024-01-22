@@ -79,11 +79,12 @@ void DoctorController::prescribeMedication(const crow::request &req, crow::respo
         const std::string doctor_id = json["doctor_id"].s();
         const std::string patient_id = json["patient_id"].s();
         const std::string prescription = json["prescription"].s();
+        const int count = json["count"].i();
 
-        if (doctor_id.empty() || patient_id.empty() || prescription.empty())
+        if (doctor_id.empty() || patient_id.empty() || prescription.empty() || !count)
         {
             res.code = 400;
-            throw std::runtime_error("Required fields are empty: doctor_id, patient_id, prescription");
+            throw std::runtime_error("Required fields are empty: doctor_id, patient_id, prescription, count");
         }
 
         if (!this->doctorService->existsDoctor(doctor_id) || !this->doctorService->existsPatient(patient_id))
@@ -92,9 +93,9 @@ void DoctorController::prescribeMedication(const crow::request &req, crow::respo
             throw std::runtime_error("Doctor or patient not found");
         }
 
-        auto resultInsert = this->doctorService->prescribeMedication(doctor_id, patient_id, prescription);
+        auto resultInsert = this->doctorService->prescribeMedication(doctor_id, patient_id, prescription, count);
 
-        if (resultInsert.empty())
+        if (resultInsert["status"] == "failed")
         {
             res.code = 500;
             throw std::runtime_error("Internal server error");
